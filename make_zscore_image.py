@@ -59,7 +59,7 @@ if __name__ == "__main__":
     print("    tile = the tile id, e.g. L15-0113E-1152N")
     print("    ascdesc = to indicate whether image is ascending or descending.")
     print("    theweek = the week indicator, e.g. 20191223_to_20191230")
-    print("    basebleach = either base or bleach to indsicate to which distribution the zscore should be relative")
+    print("    basebleach = either base or bleach to indicate to which distribution the zscore should be relative")
     print("")
 
     sys.exit( 0 )
