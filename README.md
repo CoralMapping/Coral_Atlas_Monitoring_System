@@ -12,8 +12,8 @@ This is the code that is the basis of creating the persistent deviation results.
 # difference_bayes.py
 This code is similar to difference_coral_pv.py, but is based on a Bayesian probability of a pixel being significantly different from the baseline.  There are other variants of this probabilistic approach, but this is the initial result.
 
-## make_zscore_image.py
+# make_zscore_image.py
 This is a code which creates a image of teh zscore for each pixel based on a baseline distribution or statistics of some other aggregation time period.
 
-## make_zscore_image2.py
+# make_zscore_image2.py
 This is a variation on the previous code which has an arguement to only process up to a certain date.
