@@ -14,8 +14,9 @@ def main(tile, ascdesc, stopat):
 
   infile = 'BleachFiles/' + ascdesc + '_' + tile + '_bleach_' + stopat + '.tif'
   outfile = 'BleachFiles/' + ascdesc + '_' + tile + '_bleach_' + stopat + '_zscore_base.tif'
-
   statfile = 'BaseFiles/' + ascdesc + '_' + tile + '_base.tif'
+
+  coralfile = 'CoralNew/' + tile + '_coral2.tif'
 
   if os.path.exists(infile):
     inDS = gdal.Open(infile, gdal.GA_ReadOnly)
@@ -30,6 +31,18 @@ def main(tile, ascdesc, stopat):
     print('File %s does not exist' % (statfile))
     sys.exit(0)
 
+  if os.path.exists(coralfile):
+    coDS = gdal.Open(coralfile, gdal.GA_ReadOnly)
+  else:
+    inDS = None
+    stDS = None
+    print('File %s does not exist' % (coralfile))
+    sys.exit(0)
+
+  cmask = coDS.GetRasterBand(1).ReadAsArray()
+  mask = np.equal(cmask, 1)
+  coDS = None
+
   gt = inDS.GetGeoTransform()
   proj = inDS.GetProjection()
   
@@ -42,7 +55,9 @@ def main(tile, ascdesc, stopat):
   statmean = stDS.GetRasterBand(1).ReadAsArray() 
   statsdev = stDS.GetRasterBand(2).ReadAsArray() 
 
-  good = np.logical_and(np.greater(rb, -9999), np.greater(statmean, -9999))
+  pregood = np.logical_and(np.greater(rb, -9999), np.greater(statmean, -9999))
+  good = np.logical_and(pregood, mask)
+
   zscore = np.zeros((inDS.RasterYSize, inDS.RasterXSize), dtype=np.float32) - 9999
   zval = (rb[good] - statmean[good])/statsdev[good]
   zscore[good] = zval
