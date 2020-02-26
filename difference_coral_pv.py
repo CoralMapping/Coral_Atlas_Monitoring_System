@@ -26,7 +26,7 @@ files = []
 
 ## go through those files and get the bottom reflectance (br) files.
 for thedir in thedirs:
-  tilepath = thedir + os.path.sep + tileid + '_br_comp.tif'
+  tilepath = thedir + os.path.sep + tileid + '_rb.tif'
   if os.path.exists(tilepath):
     files.append(tilepath)
 
@@ -38,14 +38,15 @@ print("Last file: %s" % (files[-1]))
 
 ## separate baseline from Bleaching files
 ## for Hawaii, the baseline period was April through August 2019
-baseline_files = [x for x in files if '201908' not in x and '201909' not in x and '201910' not in x and '201911' not in x and '201912' not in x and '202001' not in x]
+## I know that this logic is silly and should use the datetime package to work this out.  We just kept caring this logic forward, but we need something more elegant.
+baseline_files = [x for x in files if '201908' not in x and '201909' not in x and '201910' not in x and '201911' not in x and '201912' not in x and '202001' not in x and '202002' not in x]
 temp_bleaching_files = [x for x in files if '201908' in x or '201909' in x or '201910' in x or '201911' in x or '201912' in x or '202001' in x or '202002' in x]
 bleaching_files = []
 
 ## create a date object of the week to stop
 stopdate = datetime.datetime(int(stopat[-8:-4]), int(stopat[-4:-2]), int(stopat[-2:])) + datetime.timedelta(days=1)
 
-## go through the files to only get teh bleaching files up to the stopping week
+## go through the files to only get the bleaching files up to the "stopping week"
 for j,name in enumerate(temp_bleaching_files):
   imgdatestr = name.split('_')[3][0:8]
   imgdate = datetime.datetime(int(imgdatestr[0:4]), int(imgdatestr[4:6]), int(imgdatestr[6:]))
@@ -68,6 +69,8 @@ for _f in range(len(bleaching_files)):
     print((bleaching_files[_f],bleaching_datasets[-1].RasterXSize,bleaching_datasets[-1].RasterYSize))
 
 ## Open coral mask
+## this is for the coral mask files divided up into the same tile scheme as the other data.
+## a value of 1 indicates it is coral and 0 is not.
 maskfile = 'CoralNew/' + tileid + '_coral2.tif'
 print('Maskfile %s' % (maskfile))
 maskset = gdal.Open(maskfile, gdal.GA_ReadOnly)
@@ -98,6 +101,7 @@ outDataset.SetGeoTransform(out_trans)
 change_dat = np.zeros((y_size,x_size,n_output_bands),dtype=np.float32) -9999
 
 ## Go through images line by line to determine baseline and count pixels above maximum from baseline
+## Apply mask to each line
 for _line in range(y_off, y_off+y_size):
 
     # get the baseline values
