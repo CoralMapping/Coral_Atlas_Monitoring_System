@@ -9,7 +9,7 @@ There are hundreds of codes that we have dewveloped to explore, experiment, and 
 The first step in the processing is taking the surface reflectance (SR) tiles from Planet and converting them to bottom reflectance (Rb).
 
 # depth_rb_noauto_hawaii.py
-This is the code that creates the bottom reflectance (Rb) from Surface Reflectance (SR).  The SR data are in the tiles received from Planet each week.  The name of the file is a holdover from when we calculated both depth and Rb.  "Noauto" means that it does not automatically calculcated the Chl-a value.  That values is set as a constant of 0.4 until some improvement on it's estimation can be made.
+This is the code that creates the bottom reflectance (Rb) from Surface Reflectance (SR).  The SR data are in the tiles received from Planet each week.  The name of the file is a holdover from when we calculated both depth and Rb.  "Noauto" means that it does not automatically calculated the Chl-a value.  That values is set as a constant of 0.4 until some improvement on it's estimation can be made.
 
 Here is an example of how this code is run from Linux command line.
   depth_rb_noauto_hawaii.py L15-0131E-1144N.tif L15-0131E-1144N_br.tif 0.4
