@@ -140,8 +140,11 @@ def rb(inreflfile, chla, depthfile, outfile, logf):
     if (logf is not None):
       logf.write(("RB: Cannot create GeoTransform and/or Projection for file %s\n") % (outfile))
     return 9
-    
-  depthvec = depthdata[good2] / 100.0
+  
+  ## The depth data input is expected to be in meters.
+  ## So, if your input image is in centimeters, must divide it by 100 and make it a float if
+  ## isn't already promoted to a float.
+  depthvec = depthdata[good2]
   del depthdata
 
   ## Read NIR band for doing glint correction on the other bands
