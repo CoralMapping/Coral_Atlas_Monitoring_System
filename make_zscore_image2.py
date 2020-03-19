@@ -16,7 +16,7 @@ def main(tile, ascdesc, stopat):
   outfile = 'BleachFiles/' + ascdesc + '_' + tile + '_bleach_' + stopat + '_zscore_base.tif'
   statfile = 'BaseFiles/' + ascdesc + '_' + tile + '_base.tif'
 
-  coralfile = 'CoralNew/' + tile + '_coral2.tif'
+  coralfile = 'CoralNew/' + tile + '_coral3.tif'
 
   if os.path.exists(infile):
     inDS = gdal.Open(infile, gdal.GA_ReadOnly)
