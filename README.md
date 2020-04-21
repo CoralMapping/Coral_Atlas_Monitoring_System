@@ -8,6 +8,13 @@ There are hundreds of codes that we have dewveloped to explore, experiment, and 
 
 The first step in the processing is taking the surface reflectance (SR) tiles from Planet and converting them to bottom reflectance (Rb).
 
+# mask_clouds.py
+This code creates a cloud masked Planet Mosaic quad.  It is run thusly.
+make_clouds.py L15-1185E-0119N.tif
+
+# landsat8_clean_mosaic.js
+This is a code originated by Ji-Wei Li to cfreate a clean landsat mosaic in google earth engine.  
+
 # depth_rb_noauto_hawaii.py
 This is the code that creates the bottom reflectance (Rb) from Surface Reflectance (SR).  The SR data are in the tiles received from Planet each week.  The name of the file is a holdover from when we calculated both depth and Rb.  "Noauto" means that it does not automatically calculated the Chl-a value.  That values is set as a constant of 0.4 until some improvement on it's estimation can be made.
 
