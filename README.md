@@ -8,6 +8,13 @@ There are hundreds of codes that we have dewveloped to explore, experiment, and 
 
 The first step in the processing is taking the surface reflectance (SR) tiles from Planet and converting them to bottom reflectance (Rb).
 
+# mask_clouds.py
+This code creates a cloud masked Planet Mosaic quad.  It is run thusly.
+make_clouds.py L15-1185E-0119N.tif
+
+# landsat8_clean_mosaic.js
+This is a code originated by Ji-Wei Li to cfreate a clean landsat mosaic in google earth engine.  
+
 # depth_rb_noauto_hawaii.py
 This is the code that creates the bottom reflectance (Rb) from Surface Reflectance (SR).  The SR data are in the tiles received from Planet each week.  The name of the file is a holdover from when we calculated both depth and Rb.  "Noauto" means that it does not automatically calculated the Chl-a value.  That values is set as a constant of 0.4 until some improvement on it's estimation can be made.
 
@@ -37,6 +44,13 @@ The code has a number of directories and other things hard-coded in the file, bu
 =======================================
 
 # The following pieces of code are experiemntal in nature and are constantly being tweeked for different purposes.
+# extract_proportional_point.py
+This code is for extracting points from pixels that increased relative to the baseline.  It gets coordinates of those pixels,
+converts the coordinates to latitude/longitude, gets their PV values and returns a 3-column by N-row Numpy array.  It also randomly samples the points for up to 20,000 pixels, which is the limit that the Google Maps API accepts.  There is also some logic to reading the Coral map by tile to deterine how many pixels to sample in a tile, given the amount of coral that appears in the tile.  The details of how many to sample needs to be worked out a bit more.
+
+# tile_orbit_list.py
+This code takes a tile ID as an input and returns whether the preferred tile orbit is ascending or descending.  This is simply a lookup table, but could  be replaced with a computational function if it could be determined that way.  In the meantime, we are going by the human eye in determining if there is problematic glint from the water surface for a descending tile.  The default is to use the descending data, unless we know that theascending tile avoids glint. in the data.
+
 # difference_bayes.py
 This code is similar to difference_coral_pv.py, but is based on a Bayesian probability of a pixel being significantly different from the baseline.  There are other variants of this probabilistic approach, but this is the initial result.
 
