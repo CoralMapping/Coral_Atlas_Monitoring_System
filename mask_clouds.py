@@ -7,6 +7,7 @@ import subprocess
 from skimage.transform import resize
 from skimage.morphology import disk
 from skimage.morphology import binary_erosion
+import pygeos
 
 """This code is designed to do a rough masking of Planet normalized analytic mosaics that have unmasked clouds,
 shadows, and other anomalies.  It depends on having a pre-computed Landsat-8 cloud free mosaic, processed in 
@@ -42,15 +43,16 @@ def main(inimg):
   lrx = ingt[0] + (xsize * ingt[1])
   lry = ingt[3] + (ysize * ingt[5])
   
-  clavgimg = '/scratch/dknapp4/GBR/Clouds/landsat8_mean.vrt'
+  ## clavgimg = '/scratch/dknapp4/GBR/Clouds/landsat8_mean.vrt'
+  clavgimg = '/scratch/dknapp4/GBR/Clouds/mean_alt_Landsat8.tif/mean_Landsat8.tif'
   claDS = gdal.Open(clavgimg, gdal.GA_ReadOnly)
   clagt = claDS.GetGeoTransform()
   xsizecla = claDS.RasterXSize
   ysizecla = claDS.RasterYSize
   clagt = claDS.GetGeoTransform()
   
-  clstdimg = '/scratch/dknapp4/GBR/Clouds/landsat8_stdev.vrt'
-  clsDS = gdal.Open(clavgimg, gdal.GA_ReadOnly)
+  clstdimg = '/scratch/dknapp4/GBR/Clouds/stdev_alt_Landsat8.tif/stdev_Landsat8.tif'
+  clsDS = gdal.Open(clstdimg, gdal.GA_ReadOnly)
   clsgt = clsDS.GetGeoTransform()
   xsizecls = clsDS.RasterXSize
   ysizecls = clsDS.RasterYSize
@@ -62,11 +64,25 @@ def main(inimg):
   l8avg ='temp_mean_'+randit+'.tif'
   l8std ='temp_stdev_'+randit+'.tif'
   
+  landsatExtent = (clagt[0], clagt[3], clagt[0]+(xsizecla*clagt[1]), clagt[3]+(ysizecla*clagt[5]))
+  landBox = pygeos.box(landsatExtent[0], landsatExtent[1], landsatExtent[2], landsatExtent[3])
+  doveBox = pygeos.box(ulx, uly, lrx, lry)
+  completeCoverage = pygeos.predicates.contains(landBox, doveBox)
+  drv = gdal.GetDriverByName('GTiff')
+  
+  if not completeCoverage:
+    print('Warning: The Landsat image available for comparison does not fully cover the area of the Dove image')
+    print('         Input image will be copied without masking')
+    drv.CreateCopy(outimg, inDS, 0)
+    inDS = None
+    return
+
   for j in ['mean', 'stdev']:
     commdove1 = 'gdalwarp -of GTiff -r near -te '
-    commdove2 = '%12.2f %12.2f %12.2f %12.2f -tr %6.2f %6.2f %s %s' % (ulx, lry, lrx, uly, clagt[1], clagt[1], '/scratch/dknapp4/GBR/Clouds/landsat8_'+j+'.vrt', 'temp_'+j+'_'+randit+'.tif') 
+    ## commdove2 = '%12.2f %12.2f %12.2f %12.2f -tr %6.2f %6.2f %s %s' % (ulx, lry, lrx, uly, clagt[1], clagt[1], '/scratch/dknapp4/GBR/Clouds/landsat8_'+j+'.vrt', 'temp_'+j+'_'+randit+'.tif') 
+    commdove2 = '%12.2f %12.2f %12.2f %12.2f -tr %6.2f %6.2f %s %s' % (ulx, lry, lrx, uly, clagt[1], clagt[1], '/scratch/dknapp4/GBR/Clouds/'+j+'_alt_Landsat8.tif/'+j+'_Landsat8.tif', 'temp_'+j+'_'+randit+'.tif') 
     myargs = (commdove1+commdove2).split()
-    complete = subprocess.run(myargs, check=True)
+    complete = subprocess.run(myargs, check=True, capture_output=True)
   
   outfile = os.path.splitext(os.path.basename(inimg))[0] + '_' + randit + '_l8_sub.tif'
   commdove1 = 'gdalwarp -of GTiff -r average -te '
@@ -89,8 +105,6 @@ def main(inimg):
   planet2 = pDS.GetRasterBand(2)
   planet3 = pDS.GetRasterBand(3)
   
-  drv = gdal.GetDriverByName('GTiff')
-  
   smmask = np.zeros((pDS.RasterYSize, pDS.RasterXSize), dtype=np.bool)
   
   for i in range(pDS.RasterYSize):
@@ -108,9 +122,9 @@ def main(inimg):
     lavg = np.mean(llines, axis=0)
     lgood = np.greater(np.sum(llines, axis=0), 0)
   
-    clstdline1 = clearavg1.ReadAsArray(0, i, clearavgDS.RasterXSize, 1)
-    clstdline2 = clearavg2.ReadAsArray(0, i, clearavgDS.RasterXSize, 1)
-    clstdline3 = clearavg3.ReadAsArray(0, i, clearavgDS.RasterXSize, 1)
+    clstdline1 = clearstd1.ReadAsArray(0, i, clearstdDS.RasterXSize, 1)
+    clstdline2 = clearstd2.ReadAsArray(0, i, clearstdDS.RasterXSize, 1)
+    clstdline3 = clearstd3.ReadAsArray(0, i, clearstdDS.RasterXSize, 1)
     slines  = np.stack((clstdline1.squeeze(), clstdline2.squeeze(), clstdline3.squeeze()))
     lstd = np.mean(slines, axis=0)
   
@@ -123,8 +137,9 @@ def main(inimg):
     dist = np.sqrt(sqdiff1 + sqdiff2 + sqdiff3)
     out = np.zeros(pDS.RasterXSize, dtype=np.float32)
     out[good] = dist
-    notdark = np.less((lavg[good]-(lstd[good]*0.5)), pavg[good])
-    mask = np.logical_and(np.less(out[good], 800.0), notdark) 
+    simp = np.logical_and(np.less(pavg[good], lavg[good]+lstd[good]), np.greater(pavg[good], lavg[good]-lstd[good]))
+    ## notdark = np.less(lavg[good]-lstd[good], pavg[good])
+    mask = np.logical_and(np.less(out[good], 800.0), simp) 
     smmask[i, good] = mask.astype(np.uint8)
     
   pDS, clearavgDS, clearstdDS = None, None, None
@@ -158,6 +173,7 @@ def main(inimg):
   for b in range(inDS.RasterCount):
     data = inDS.GetRasterBand(b+1).ReadAsArray()
     mask = np.equal(berode,0)
+    mask = np.equal(bigmask,0)
     data[mask] = 0
     mDS.GetRasterBand(b+1).WriteArray(data)
   
